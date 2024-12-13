@@ -1,0 +1,59 @@
+---
+- hosts: all
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Install docker packages # устанавливаем пакеты необходимые для установки докера
+      become: yes
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      with_items:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+    - name: Add Docker s official GPG key
+      become: yes
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+    - name: Verify that we have the key with the fingerprint
+      become: yes    
+      apt_key:
+        id: 0EBFCD88
+        state: present    
+    - name: Verify that we have the key with the fingerprint
+      become: yes    
+      apt_key:
+        id: 0EBFCD88
+        state: present
+    - name: Set up the stable repository # добавляем репозиторий докера
+      become: yes    
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+        state: present
+        update_cache: yes
+    - name: Update apt packages
+      become: yes    
+      apt:
+        update_cache: yes
+    - name: Install docker # установка докера
+      become: yes    
+      apt:
+        name: docker-ce
+        state: present
+        update_cache: yes
+    - name: Install docker-compose 
+      become: yes
+      get_url:
+        url : https://github.com/docker/compose/releases/download/1.25.1-rc1/docker-compose-Linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: 0777
+    - name: Copy project # Копируем проект с хост машины в созданную через vagrant
+      copy: src=/root/dz28/project dest=/root
+    - name: Run container
+      shell:
+        cmd: "docker-compose -f docker-compose.yml up -d"
+        chdir: /root/project
